@@ -2,18 +2,21 @@
 <html>
   <head>
     <title>Remote Control</title>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   </head>
   <body>
     <img id="screen" src="http://checkserver-rmqt.onrender.com/stream" />
     <script>
-      const ws = new WebSocket("ws://checkserver-rmqt.onrender.com");
+      const socket = io("https://checkserver-rmqt.onrender.com");
+
       const img = document.getElementById("screen");
+
       img.addEventListener("click", e => {
-        ws.send(JSON.stringify({
+        socket.emit("touch", {
           type: "tap",
           x: e.offsetX,
           y: e.offsetY
-        }));
+        });
       });
     </script>
   </body>
