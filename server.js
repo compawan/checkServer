@@ -1,3 +1,5 @@
+import WebSocket from 'ws';
+const wss = new WebSocket.Server({ port: 8081 });
 const express = require("express");
 const app = express();
 const port = process.env.PORT || 8080;
@@ -40,13 +42,6 @@ app.listen(port, () => {
 });
 
 
-
-
-/*
-import WebSocket from 'ws';
-
-const wss = new WebSocket.Server({ port: 8081 });
-
 wss.on('connection', ws => {
     console.log("New client connected");
 
@@ -64,4 +59,4 @@ wss.on('connection', ws => {
     ws.on('close', () => {
         console.log("Client disconnected");
     });
-});  */
+});  
