@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Remote Control</title>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  </head>
+  <body>
+    <img id="screen" src="http://checkserver-rmqt.onrender.com/stream" />
+    <script>
+      const socket = io("https://checkserver-rmqt.onrender.com");
+
+      const img = document.getElementById("screen");
+
+      img.addEventListener("click", e => {
+        socket.emit("touch", {
+          type: "tap",
+          x: e.offsetX,
+          y: e.offsetY
+        });
+      });
+    </script>
+  </body>
+<<<<<<< HEAD
+</html>
+=======
+</html>
+>>>>>>> 772848b (add socket.io dependency)
