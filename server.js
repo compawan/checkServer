@@ -1,10 +1,18 @@
-const WebSocket = require("ws");
-const express = require("express");
+import express from "express";
+import { createServer } from "http";
+import { Server } from "socket.io";
+
 const app = express();
-const port = process.env.PORT || 8080;
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+  cors: {
+    origin: "*"
+  }
+});
 
 let lastFrame = null;
 
+// allow large uploads
 app.use(express.raw({ type: "image/jpeg", limit: "5mb" }));
 
 app.post("/upload", (req, res) => {
@@ -33,25 +41,23 @@ app.get("/stream", (req, res) => {
   });
 });
 
-app.listen(port, () => {
-  console.log(`📡 MJPEG server running at http://localhost:${port}/stream`);
+// handle Socket.IO messages
+io.on("connection", socket => {
+  console.log("✅ client connected");
+
+  socket.on("touch", data => {
+    console.log("touch received", data);
+    // if needed, forward to other devices:
+    socket.broadcast.emit("touch", data);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("❌ client disconnected");
+  });
 });
 
-const wss = new WebSocket.Server({ port: 8081 });
-
-wss.on("connection", ws => {
-  console.log("New client connected");
-
-  ws.on("message", msg => {
-    console.log("Received:", msg);
-    wss.clients.forEach(client => {
-      if (client !== ws && client.readyState === WebSocket.OPEN) {
-        client.send(msg);
-      }
-    });
-  });
-
-  ws.on("close", () => {
-    console.log("Client disconnected");
-  });
+// listen on the Render-assigned port
+const port = process.env.PORT || 8080;
+httpServer.listen(port, () => {
+  console.log(`🚀 Server on http://localhost:${port}`);
 });
