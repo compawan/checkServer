@@ -1,6 +1,7 @@
 import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
+import { join } from "path";
 
 const app = express();
 const httpServer = createServer(app);
@@ -11,6 +12,9 @@ const io = new Server(httpServer, {
 });
 
 let lastFrame = null;
+
+// static serving
+app.use(express.static(join(process.cwd(), "public")));
 
 // allow large uploads
 app.use(express.raw({ type: "image/jpeg", limit: "5mb" }));
