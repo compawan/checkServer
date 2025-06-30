@@ -6,18 +6,26 @@
   </head>
   <body>
     <img id="screen" src="http://checkserver-rmqt.onrender.com/stream" />
-     <script>
-      const socket = io("https://checkserver-rmqt.onrender.com");
+    
+    <script>
+  const socket = io("https://checkserver-rmqt.onrender.com");
+  const img = document.getElementById("screen");
 
-      const img = document.getElementById("screen");
+  // You can set your offsets here:
+  const xOffset = 50;    // shift 50px left
+  const yOffset = -30;   // shift 30px bottom
 
-      img.addEventListener("click", e => {
-        socket.emit("touch", {
-          type: "tap",
-          x: e.offsetX,
-          y: e.offsetY
-        });
-      });
-    </script>
+  img.addEventListener("click", e => {
+    const correctedX = e.offsetX + xOffset;
+    const correctedY = e.offsetY + yOffset;
+
+    socket.emit("touch", {
+      type: "tap",
+      x: correctedX,
+      y: correctedY
+    });
+  });
+</script>
+
   </body>
 </html>
