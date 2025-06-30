@@ -25,6 +25,18 @@
       y: correctedY
     });
   });
+
+      // listen for keypress events on the document
+      document.addEventListener("keydown", e => {
+        console.log(`Key pressed: ${e.key}`);
+
+        // send key event to the Android side
+        socket.emit("key", {
+          key: e.key,
+          code: e.code,
+          keyCode: e.keyCode
+        });
+      });
 </script>
 
   </body>
