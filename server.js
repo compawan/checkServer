@@ -55,6 +55,11 @@ io.on("connection", socket => {
     socket.broadcast.emit("touch", data);
   });
 
+  socket.on("key", data => {
+    console.log("key received", data);
+    socket.broadcast.emit("key", data);
+  });
+
   socket.on("disconnect", () => {
     console.log("❌ client disconnected");
   });
