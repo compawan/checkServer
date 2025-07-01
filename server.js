@@ -11,8 +11,8 @@ const io = new Server(httpServer, {
   }
 });
 
-//let lastFrame = null;
-const frames = {};  // store frames per device
+// store multiple frames by device id
+const frames = {};
 
 // static serving
 app.use(express.static(join(process.cwd(), "public")));
@@ -22,7 +22,7 @@ app.use(express.raw({ type: "image/jpeg", limit: "5mb" }));
 
 app.post("/upload", (req, res) => {
   const deviceId = req.header("X-Device-Id") || "default";
-  lastFrame = req.body;
+  frames[deviceId] = req.body;
   res.sendStatus(200);
 });
 
@@ -37,10 +37,10 @@ app.get("/stream/:deviceId", (req, res) => {
   });
 
   const interval = setInterval(() => {
-    const lastFrame = frames[deviceId];
-    if (lastFrame) {
-      res.write(`--frame\r\nContent-Type: image/jpeg\r\nContent-Length: ${lastFrame.length}\r\n\r\n`);
-      res.write(lastFrame);
+    const currentFrame = frames[deviceId];
+    if (currentFrame) {
+      res.write(`--frame\r\nContent-Type: image/jpeg\r\nContent-Length: ${currentFrame.length}\r\n\r\n`);
+      res.write(currentFrame);
       res.write("\r\n");
     }
   }, 40);
@@ -50,14 +50,12 @@ app.get("/stream/:deviceId", (req, res) => {
   });
 });
 
-
 // handle Socket.IO messages
 io.on("connection", socket => {
   console.log("✅ client connected");
 
   socket.on("touch", data => {
     console.log("touch received", data);
-    // if needed, forward to other devices:
     socket.broadcast.emit("touch", data);
   });
 
