@@ -1,43 +1,60 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Remote Control</title>
+    <title>Remote Control with ID</title>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   </head>
   <body>
-    <img id="screen" src="http://checkserver-rmqt.onrender.com/stream" />
-    
+    <h2>Remote Control</h2>
+    <input id="idBox" placeholder="Enter device ID" />
+    <button id="connectBtn">Connect</button>
+    <br><br>
+    <img id="screen" style="max-width:100%; display:none;" />
+
     <script>
-  const socket = io("https://checkserver-rmqt.onrender.com");
-  const img = document.getElementById("screen");
+      const socket = io("https://checkserver-rmqt.onrender.com"); // or localhost
 
-  // You can set your offsets here:
-  const xOffset = -20;    // shift 50px left
-  const yOffset = 28;   // shift 30px bottom
+      const img = document.getElementById("screen");
+      const input = document.getElementById("idBox");
+      const button = document.getElementById("connectBtn");
 
-  img.addEventListener("click", e => {
-    const correctedX = e.offsetX + xOffset;
-    const correctedY = e.offsetY + yOffset;
+      let currentId = null;
 
-    socket.emit("touch", {
-      type: "tap",
-      x: correctedX,
-      y: correctedY
-    });
-  });
+      button.addEventListener("click", () => {
+        const enteredId = input.value.trim();
+        if (enteredId) {
+          currentId = enteredId;
 
-      // listen for keypress events on the document
+          socket.emit("viewer_connect", { id: enteredId });
+
+          img.src = `http://checkserver-rmqt.onrender.com/stream?id=${enteredId}`;
+          img.style.display = "block";
+        }
+      });
+
+      img.addEventListener("click", e => {
+        if (!currentId) return;
+
+        const x = e.offsetX;
+        const y = e.offsetY;
+
+        socket.emit("touch", {
+          id: currentId,
+          type: "tap",
+          x,
+          y
+        });
+      });
+
       document.addEventListener("keydown", e => {
-        console.log(`Key pressed: ${e.key}`);
-
-        // send key event to the Android side
+        if (!currentId) return;
         socket.emit("key", {
+          id: currentId,
           key: e.key,
           code: e.code,
           keyCode: e.keyCode
         });
       });
-</script>
-
+    </script>
   </body>
 </html>
