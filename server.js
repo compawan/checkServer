@@ -43,7 +43,7 @@ app.get("/stream/:deviceId", (req, res) => {
       res.write(currentFrame);
       res.write("\r\n");
     }
-  }, 20);
+  }, 40);
 
   req.on("close", () => {
     clearInterval(interval);
