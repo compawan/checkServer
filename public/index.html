@@ -4,35 +4,44 @@
   <title>Remote Control</title>
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <style>
-    body { margin:0; }
-    img {
+    body { margin: 0; }
+    canvas {
       position: absolute;
       top: 0;
       left: 0;
-      display: block;
-      width: auto;
-      height: auto;
+      background: black; /* shows black initially instead of last stale frame */
     }
   </style>
 </head>
 <body>
-  <img id="screen" src="http://checkserver-rmqt.onrender.com/stream/7052" />
-
+  <canvas id="screen"></canvas>
   <script>
-    const socket = io("https://checkserver-rmqt.onrender.com");
-
-    // register browser client (optional)
-    socket.emit("register_device", { id: "browser" });
-
-    const img = document.getElementById("screen");
+    const canvas = document.getElementById("screen");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
     const deviceIdTouch = "7052_touch";
     const deviceIdKeyboard = "7052_keyboard";
 
+    const socket = io("https://checkserver-rmqt.onrender.com");
+
+    socket.emit("register_device", { id: "browser" });
+
+    // MJPEG stream handling
+    const mjpegStream = new Image();
+    mjpegStream.src = "http://checkserver-rmqt.onrender.com/stream/7052";
+
+    mjpegStream.onload = function draw() {
+      ctx.drawImage(mjpegStream, 0, 0, canvas.width, canvas.height);
+      requestAnimationFrame(draw);
+    };
+
+    // clicks
     const xOffset = -20;
     const yOffset = 28;
 
-    img.addEventListener("click", e => {
+    canvas.addEventListener("click", e => {
       const correctedX = e.offsetX + xOffset;
       const correctedY = e.offsetY + yOffset;
 
@@ -46,6 +55,7 @@
       });
     });
 
+    // keys
     document.addEventListener("keydown", e => {
       console.log(`sending key to device ${deviceIdKeyboard}: ${e.key}`);
       socket.emit("key", {
