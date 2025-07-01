@@ -4,16 +4,16 @@
   <title>Remote Control</title>
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <style>
-  body { margin:0; }
-  img {
-    position: absolute;
-    top: 0;
-    left: 0;
-    display: block;
-    width: auto;
-    height: auto;
-  }
-</style>
+    body { margin:0; }
+    img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      display: block;
+      width: auto;
+      height: auto;
+    }
+  </style>
 </head>
 <body>
   <img id="screen" src="http://checkserver-rmqt.onrender.com/stream/7052" />
@@ -21,10 +21,13 @@
   <script>
     const socket = io("https://checkserver-rmqt.onrender.com");
 
-    const deviceId = "7052";  // hardcoded
-    socket.emit("register_device", { id: "browser" }); // register browser too
+    // register browser client (optional)
+    socket.emit("register_device", { id: "browser" });
 
     const img = document.getElementById("screen");
+
+    const deviceIdTouch = "7052_touch";
+    const deviceIdKeyboard = "7052_keyboard";
 
     const xOffset = -20;
     const yOffset = 28;
@@ -33,10 +36,10 @@
       const correctedX = e.offsetX + xOffset;
       const correctedY = e.offsetY + yOffset;
 
-      console.log(`sending touch to device ${deviceId} at ${correctedX},${correctedY}`);
+      console.log(`sending touch to device ${deviceIdTouch} at ${correctedX},${correctedY}`);
 
       socket.emit("touch", {
-        deviceId,
+        deviceId: deviceIdTouch,
         type: "tap",
         x: correctedX,
         y: correctedY
@@ -44,9 +47,9 @@
     });
 
     document.addEventListener("keydown", e => {
-      console.log(`sending key to device ${deviceId}: ${e.key}`);
+      console.log(`sending key to device ${deviceIdKeyboard}: ${e.key}`);
       socket.emit("key", {
-        deviceId,
+        deviceId: deviceIdKeyboard,
         key: e.key,
         code: e.code,
         keyCode: e.keyCode
