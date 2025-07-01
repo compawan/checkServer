@@ -11,7 +11,8 @@ const io = new Server(httpServer, {
   }
 });
 
-let lastFrame = null;
+//let lastFrame = null;
+const frames = {};  // store frames per device
 
 // static serving
 app.use(express.static(join(process.cwd(), "public")));
@@ -20,11 +21,14 @@ app.use(express.static(join(process.cwd(), "public")));
 app.use(express.raw({ type: "image/jpeg", limit: "5mb" }));
 
 app.post("/upload", (req, res) => {
+  const deviceId = req.header("X-Device-Id") || "default";
   lastFrame = req.body;
   res.sendStatus(200);
 });
 
-app.get("/stream", (req, res) => {
+app.get("/stream/:deviceId", (req, res) => {
+  const deviceId = req.params.deviceId;
+
   res.writeHead(200, {
     "Content-Type": "multipart/x-mixed-replace; boundary=frame",
     "Cache-Control": "no-cache",
@@ -33,6 +37,7 @@ app.get("/stream", (req, res) => {
   });
 
   const interval = setInterval(() => {
+    const lastFrame = frames[deviceId];
     if (lastFrame) {
       res.write(`--frame\r\nContent-Type: image/jpeg\r\nContent-Length: ${lastFrame.length}\r\n\r\n`);
       res.write(lastFrame);
@@ -44,6 +49,7 @@ app.get("/stream", (req, res) => {
     clearInterval(interval);
   });
 });
+
 
 // handle Socket.IO messages
 io.on("connection", socket => {
