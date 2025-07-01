@@ -21,16 +21,17 @@
       let currentId = null;
 
       button.addEventListener("click", () => {
-        const enteredId = input.value.trim();
-        if (enteredId) {
-          currentId = enteredId;
+  const enteredId = input.value.trim();
+  if (enteredId) {
+    currentId = enteredId;
 
-          socket.emit("viewer_connect", { id: enteredId });
+    socket.emit("viewer_connect", { id: enteredId });
 
-          img.src = `http://checkserver-rmqt.onrender.com/stream?id=1680`;
-          img.style.display = "block";
-        }
-      });
+    img.src = `http://checkserver-rmqt.onrender.com/stream?id=${enteredId}`;
+    img.style.display = "block";
+  }
+});
+
 
       img.addEventListener("click", e => {
         if (!currentId) return;
