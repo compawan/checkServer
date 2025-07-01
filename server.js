@@ -1,19 +1,29 @@
-const express = require("express");
+import express from "express";
+import { createServer } from "http";
+import { Server } from "socket.io";
+import { join } from "path";
+
 const app = express();
-const port = process.env.PORT || 8080;
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+  cors: {
+    origin: "*"
+  }
+});
 
 let lastFrame = null;
 
-// allow larger payloads
+// static serving
+app.use(express.static(join(process.cwd(), "public")));
+
+// allow large uploads
 app.use(express.raw({ type: "image/jpeg", limit: "5mb" }));
 
-// route for Android to POST the JPEG frames
 app.post("/upload", (req, res) => {
   lastFrame = req.body;
   res.sendStatus(200);
 });
 
-// MJPEG streaming route for browsers
 app.get("/stream", (req, res) => {
   res.writeHead(200, {
     "Content-Type": "multipart/x-mixed-replace; boundary=frame",
@@ -28,13 +38,35 @@ app.get("/stream", (req, res) => {
       res.write(lastFrame);
       res.write("\r\n");
     }
-  }, 40); // ~25fps (1000/25=40ms)
+  }, 40);
 
   req.on("close", () => {
     clearInterval(interval);
   });
 });
 
-app.listen(port, () => {
-  console.log(`📡 MJPEG server running at http://localhost:${port}/stream`);
+// handle Socket.IO messages
+io.on("connection", socket => {
+  console.log("✅ client connected");
+
+  socket.on("touch", data => {
+    console.log("touch received", data);
+    // if needed, forward to other devices:
+    socket.broadcast.emit("touch", data);
+  });
+
+  socket.on("key", data => {
+    console.log("key received", data);
+    socket.broadcast.emit("key", data);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("❌ client disconnected");
+  });
+});
+
+// listen on the Render-assigned port
+const port = process.env.PORT || 8080;
+httpServer.listen(port, () => {
+  console.log(`🚀 Server on http://localhost:${port}`);
 });
