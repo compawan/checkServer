@@ -11,6 +11,8 @@ const io = new Server(httpServer, {
   }
 });
 
+const deviceMap = new Map(); // id -> socket.id
+
 let lastFrame = null;
 
 // static serving
@@ -49,6 +51,12 @@ app.get("/stream", (req, res) => {
 io.on("connection", socket => {
   console.log("✅ client connected");
 
+  socket.on("register_device", (data) => {
+    console.log(`✅ device registered: ${data.id}`);
+    deviceMap.set(data.id, socket.id);
+  });
+
+  
   socket.on("touch", data => {
     console.log("touch received", data);
     // if needed, forward to other devices:
