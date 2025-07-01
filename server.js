@@ -13,7 +13,7 @@ const io = new Server(httpServer, {
 
 // store multiple frames by device id
 const frames = {};
-
+const devices = {};
 // static serving
 app.use(express.static(join(process.cwd(), "public")));
 
@@ -51,6 +51,7 @@ app.get("/stream/:deviceId", (req, res) => {
 });
 
 // handle Socket.IO messages
+/*
 io.on("connection", socket => {
   console.log("✅ client connected");
 
@@ -66,6 +67,45 @@ io.on("connection", socket => {
 
   socket.on("disconnect", () => {
     console.log("❌ client disconnected");
+  });
+});  */
+
+io.on("connection", socket => {
+  console.log("✅ client connected");
+
+  socket.on("register_device", data => {
+    const id = data.id;
+    devices[id] = socket;
+    console.log(`📲 device registered: ${id}`);
+  });
+
+  socket.on("touch", data => {
+    console.log("touch received", data);
+    const deviceId = data.deviceId;
+    const targetSocket = devices[deviceId];
+    if (targetSocket) {
+      targetSocket.emit("touch", data);
+    }
+  });
+
+  socket.on("key", data => {
+    console.log("key received", data);
+    const deviceId = data.deviceId;
+    const targetSocket = devices[deviceId];
+    if (targetSocket) {
+      targetSocket.emit("key", data);
+    }
+  });
+
+  socket.on("disconnect", () => {
+    // cleanup device
+    for (const [id, sock] of Object.entries(devices)) {
+      if (sock === socket) {
+        delete devices[id];
+        console.log(`❌ device disconnected: ${id}`);
+        break;
+      }
+    }
   });
 });
 
