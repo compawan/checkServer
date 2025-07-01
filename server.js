@@ -5,76 +5,85 @@ import { join } from "path";
 
 const app = express();
 const httpServer = createServer(app);
-const io = new Server(httpServer, {
-  cors: {
-    origin: "*"
-  }
-});
+const io = new Server(httpServer, { cors: { origin: "*" } });
 
 const deviceMap = new Map(); // id -> socket.id
+const deviceFrames = new Map(); // id -> latest frame
 
-let lastFrame = null;
-
-// static serving
+// serve static
 app.use(express.static(join(process.cwd(), "public")));
-
-// allow large uploads
 app.use(express.raw({ type: "image/jpeg", limit: "5mb" }));
 
 app.post("/upload", (req, res) => {
-  lastFrame = req.body;
+  const id = req.headers["x-device-id"];
+  if (!id) return res.status(400).send("missing id");
+  deviceFrames.set(id, req.body);
   res.sendStatus(200);
 });
 
 app.get("/stream", (req, res) => {
+  const id = req.query.id;
+  if (!deviceMap.has(id)) {
+    res.status(404).end("Device not found or not connected.");
+    return;
+  }
+
   res.writeHead(200, {
     "Content-Type": "multipart/x-mixed-replace; boundary=frame",
-    "Cache-Control": "no-cache",
-    "Connection": "close",
-    "Pragma": "no-cache"
   });
 
-  const interval = setInterval(() => {
-    if (lastFrame) {
-      res.write(`--frame\r\nContent-Type: image/jpeg\r\nContent-Length: ${lastFrame.length}\r\n\r\n`);
-      res.write(lastFrame);
+  const intv = setInterval(() => {
+    const frame = deviceFrames.get(id);
+    if (frame) {
+      res.write(`--frame\r\nContent-Type: image/jpeg\r\nContent-Length: ${frame.length}\r\n\r\n`);
+      res.write(frame);
       res.write("\r\n");
     }
-  }, 40);
+  }, 50);
 
-  req.on("close", () => {
-    clearInterval(interval);
-  });
+  req.on("close", () => clearInterval(intv));
 });
 
-// handle Socket.IO messages
-io.on("connection", socket => {
-  console.log("✅ client connected");
+io.on("connection", (socket) => {
+  console.log("✅ socket connected", socket.id);
 
   socket.on("register_device", (data) => {
     console.log(`✅ device registered: ${data.id}`);
     deviceMap.set(data.id, socket.id);
   });
 
-  
-  socket.on("touch", data => {
-    console.log("touch received", data);
-    // if needed, forward to other devices:
-    socket.broadcast.emit("touch", data);
+  socket.on("viewer_connect", (data) => {
+    if (deviceMap.has(data.id)) {
+      console.log(`✅ viewer connected to device ${data.id}`);
+      socket.join(data.id);
+    } else {
+      console.log(`⚠️ invalid viewer id ${data.id}`);
+    }
   });
 
-  socket.on("key", data => {
-    console.log("key received", data);
-    socket.broadcast.emit("key", data);
+  socket.on("touch", (data) => {
+    if (data.id && deviceMap.has(data.id)) {
+      io.to(deviceMap.get(data.id)).emit("touch", data);
+    }
+  });
+
+  socket.on("key", (data) => {
+    if (data.id && deviceMap.has(data.id)) {
+      io.to(deviceMap.get(data.id)).emit("key", data);
+    }
   });
 
   socket.on("disconnect", () => {
-    console.log("❌ client disconnected");
+    console.log(`❌ disconnected ${socket.id}`);
+    for (const [id, sid] of deviceMap.entries()) {
+      if (sid === socket.id) {
+        deviceMap.delete(id);
+        deviceFrames.delete(id);
+      }
+    }
   });
 });
 
-// listen on the Render-assigned port
-const port = process.env.PORT || 8080;
-httpServer.listen(port, () => {
-  console.log(`🚀 Server on http://localhost:${port}`);
+httpServer.listen(8080, () => {
+  console.log("🚀 on http://localhost:8080");
 });
