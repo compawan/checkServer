@@ -20,11 +20,23 @@ app.use(express.static(join(process.cwd(), "public")));
 // allow large uploads
 app.use(express.raw({ type: "image/jpeg", limit: "5mb" }));
 
+/*
 app.post("/upload", (req, res) => {
   const deviceId = req.header("X-Device-Id") || "default";
   frames[deviceId] = req.body;
   res.sendStatus(200);
+});  */
+
+app.post("/upload", (req, res) => {
+  const deviceId = req.header("X-Device-Id") || "default";
+  const seq = req.header("X-Frame-Seq") || "unknown";
+
+  frames[deviceId] = req.body;
+
+  console.log(`📸 received frame from ${deviceId} seq ${seq}`);
+  res.sendStatus(200);
 });
+
 
 app.get("/stream/:deviceId", (req, res) => {
   const deviceId = req.params.deviceId;
