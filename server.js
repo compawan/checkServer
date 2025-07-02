@@ -36,17 +36,14 @@ app.get("/stream/:deviceId", (req, res) => {
     "Pragma": "no-cache"
   });
 
-  let lastSentFrame = null;  // track last sent frame
-
-  const interval = setInterval(() => {
-    const currentFrame = frames[deviceId];
-    if (currentFrame && currentFrame !== lastSentFrame) {
-      res.write(`--frame\r\nContent-Type: image/jpeg\r\nContent-Length: ${currentFrame.length}\r\n\r\n`);
-      res.write(currentFrame);
-      res.write("\r\n");
-      lastSentFrame = currentFrame;
-    }
-  }, 40);
+ const interval = setInterval(() => {
+  const currentFrame = frames[deviceId];
+  if (currentFrame) {
+    res.write(`--frame\r\nContent-Type: image/jpeg\r\nContent-Length: ${currentFrame.length}\r\n\r\n`);
+    res.write(currentFrame);
+    res.write("\r\n");
+  }
+}, 40);
 
   req.on("close", () => {
     clearInterval(interval);
