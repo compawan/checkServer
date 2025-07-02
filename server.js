@@ -36,14 +36,27 @@ app.get("/stream/:deviceId", (req, res) => {
     "Pragma": "no-cache"
   });
 
- const interval = setInterval(() => {
-  const currentFrame = frames[deviceId];
-  if (currentFrame) {
-    res.write(`--frame\r\nContent-Type: image/jpeg\r\nContent-Length: ${currentFrame.length}\r\n\r\n`);
-    res.write(currentFrame);
-    res.write("\r\n");
+ let interval;
+function startStreaming() {
+  interval = setInterval(() => {
+    const currentFrame = frames[deviceId];
+    if (currentFrame) {
+      res.write(`--frame\r\nContent-Type: image/jpeg\r\nContent-Length: ${currentFrame.length}\r\n\r\n`);
+      res.write(currentFrame);
+      res.write("\r\n");
+    }
+  }, 40);
+}
+
+// wait until first frame arrives
+const waitForFirstFrame = setInterval(() => {
+  if (frames[deviceId]) {
+    console.log(`🟢 First frame for ${deviceId} arrived, starting stream`);
+    startStreaming();
+    clearInterval(waitForFirstFrame);
   }
-}, 40);
+}, 100);
+
 
   req.on("close", () => {
     clearInterval(interval);
