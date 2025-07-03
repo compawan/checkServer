@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Remote Control</title>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      background-color: black;
+      color: white;
+      text-align: center;
+      font-family: sans-serif;
+    }
+    h1 {
+      margin: 10px 0;
+    }
+    img {
+      display: block;
+      margin: 0 auto;
+      width: auto;
+      height: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>Competent Technologies (MilkJet)</h1>
+  <img id="screen" src="http://checkserver-rmqt.onrender.com/stream/7052" />
+
+  <script>
+    const socket = io("https://checkserver-rmqt.onrender.com");
+
+    socket.emit("register_device", { id: "browser" });
+
+    const img = document.getElementById("screen");
+    const deviceIdTouch = "7052_touch";
+    const deviceIdKeyboard = "7052_keyboard";
+
+    const xOffset = -20;
+    const yOffset = 28;
+
+    img.addEventListener("click", e => {
+      const correctedX = e.offsetX + xOffset;
+      const correctedY = e.offsetY + yOffset;
+
+      console.log(`sending touch to device ${deviceIdTouch} at ${correctedX},${correctedY}`);
+
+      socket.emit("touch", {
+        deviceId: deviceIdTouch,
+        type: "tap",
+        x: correctedX,
+        y: correctedY
+      });
+    });
+
+    document.addEventListener("keydown", e => {
+      console.log(`sending key to device ${deviceIdKeyboard}: ${e.key}`);
+      socket.emit("key", {
+        deviceId: deviceIdKeyboard,
+        key: e.key,
+        code: e.code,
+        keyCode: e.keyCode
+      });
+    });
+  </script>
+</body>
+</html>
