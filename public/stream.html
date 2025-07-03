@@ -24,9 +24,23 @@
 </head>
 <body>
   <h1>Competent Technologies (MilkJet)</h1>
-  <img id="screen" src="http://checkserver-rmqt.onrender.com/stream/7052" />
+  <img id="screen" src="" />
 
   <script>
+    const socket = io("https://checkserver-rmqt.onrender.com");
+
+    socket.emit("register_device", { id: "browser" });
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const id = urlParams.get("id") || "default";
+
+    // set the img src dynamically
+    const img = document.getElementById("screen");
+    img.src = `http://checkserver-rmqt.onrender.com/stream/${id}`;
+
+    const deviceIdTouch = `${id}_touch`;
+    const deviceIdKeyboard = `${id}_keyboard`;
+    /*
     const socket = io("https://checkserver-rmqt.onrender.com");
 
     socket.emit("register_device", { id: "browser" });
@@ -34,7 +48,7 @@
     const img = document.getElementById("screen");
     const deviceIdTouch = "7052_touch";
     const deviceIdKeyboard = "7052_keyboard";
-
+*/
     const xOffset = -20;
     const yOffset = 28;
 
