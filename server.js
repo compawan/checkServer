@@ -99,10 +99,16 @@ io.on("connection", socket => {
 io.on("connection", socket => {
   console.log("✅ client connected");
 
+  // send current devices list when a new client connects
+  socket.emit("devices_update", Object.keys(devices));
+
   socket.on("register_device", data => {
     const id = data.id;
     devices[id] = socket;
     console.log(`📲 device registered: ${id}`);
+
+     // broadcast to everyone
+    io.emit("devices_update", Object.keys(devices));
   });
 
   socket.on("touch", data => {
@@ -132,6 +138,9 @@ io.on("connection", socket => {
         break;
       }
     }
+
+     // update everyone on disconnect
+    io.emit("devices_update", Object.keys(devices));
   });
 });
 
