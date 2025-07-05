@@ -9,48 +9,49 @@
       background-color: black;
       color: white;
       font-family: sans-serif;
+      display: flex;
     }
-    #statusPanel {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: #222;
-      border: 1px solid #555;
+    #main {
+      flex: 1;
+      text-align: center;
+    }
+    #sidebar {
+      width: 250px;
+      background-color: #111;
       padding: 10px;
-      border-radius: 8px;
-      font-size: 14px;
-    }
-    #statusPanel ul {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-    #statusPanel li {
-      margin: 4px 0;
     }
     h1 {
       margin: 10px 0;
-      text-align: center;
     }
     img {
       display: block;
       margin: 0 auto;
+      width: auto;
+      height: auto;
       max-width: 100%;
-      max-height: 100vh;
+      max-height: 90vh;
+    }
+    ul {
+      padding-left: 15px;
     }
   </style>
 </head>
 <body>
-  <h1>Competent Technologies (MilkJet)</h1>
-  <img id="screen" src="" />
-
-  <div id="statusPanel">
-    <strong>Device Status</strong>
+  <div id="main">
+    <h1>Competent Technologies (MilkJet)</h1>
+    <img id="screen" src="" />
+  </div>
+  <div id="sidebar">
+    <h2>Status</h2>
+    <div>Touch: <span id="touchStatus">🔴 Inactive</span></div>
+    <div>Keyboard: <span id="keyboardStatus">🔴 Inactive</span></div>
+    <h3>Connected Devices</h3>
     <ul id="devicesList"></ul>
   </div>
-
   <script>
     const socket = io("https://checkserver-rmqt.onrender.com");
+
+    socket.emit("register_device", { id: "browser" });
 
     const urlParams = new URLSearchParams(window.location.search);
     const id = urlParams.get("id") || "default";
@@ -61,76 +62,19 @@
     const deviceIdTouch = `${id}_touch`;
     const deviceIdKeyboard = `${id}_keyboard`;
 
+    const touchStatus = document.getElementById("touchStatus");
+    const keyboardStatus = document.getElementById("keyboardStatus");
     const devicesList = document.getElementById("devicesList");
 
-    // create two entries
-    const touchItem = document.createElement("li");
-    touchItem.textContent = `${deviceIdTouch}: 🔴 Inactive`;
-    devicesList.appendChild(touchItem);
-
-    const keyboardItem = document.createElement("li");
-    keyboardItem.textContent = `${deviceIdKeyboard}: 🔴 Inactive`;
-    devicesList.appendChild(keyboardItem);
-
-    // store the status for later updates
-    const deviceStatus = {
-      [deviceIdTouch]: false,
-      [deviceIdKeyboard]: false
-    };
-
-    socket.emit("register_device", { id: "browser" });
-
-    // handle registering devices
-    socket.on("connect", () => {
-      console.log("✅ Connected to Socket.IO server");
-    });
-
-    socket.on("register_device", data => {
-      console.log("registered device", data);
-    });
-
-    // on reconnect, request status again
-    socket.on("connect", () => {
-      socket.emit("register_device", { id: "browser" });
-    });
-
-    // show active devices by watching console events
-    socket.onAny((event, data) => {
-      if (event === "touch" || event === "key") {
-        console.log(`${event} event`, data);
-        // optionally you could handle activity here
-      }
-    });
-
-    // monitor connected/disconnected devices
-    socket.on("device_status", (list) => {
-      console.log("device status update", list);
-
-      // reset status
-      deviceStatus[deviceIdTouch] = false;
-      deviceStatus[deviceIdKeyboard] = false;
-
-      for (const idKey of list) {
-        if (idKey === deviceIdTouch) deviceStatus[deviceIdTouch] = true;
-        if (idKey === deviceIdKeyboard) deviceStatus[deviceIdKeyboard] = true;
-      }
-
-      touchItem.textContent = `${deviceIdTouch}: ${deviceStatus[deviceIdTouch] ? "🟢 Active" : "🔴 Inactive"}`;
-      keyboardItem.textContent = `${deviceIdKeyboard}: ${deviceStatus[deviceIdKeyboard] ? "🟢 Active" : "🔴 Inactive"}`;
-    });
-
-    // let the server know to send us device lists
-    setInterval(() => {
-      socket.emit("request_device_status");
-    }, 2000);
-
-    // handle clicks
     const xOffset = -20;
     const yOffset = 28;
+
     img.addEventListener("click", e => {
       const correctedX = e.offsetX + xOffset;
       const correctedY = e.offsetY + yOffset;
+
       console.log(`sending touch to device ${deviceIdTouch} at ${correctedX},${correctedY}`);
+
       socket.emit("touch", {
         deviceId: deviceIdTouch,
         type: "tap",
@@ -149,6 +93,26 @@
       });
     });
 
+    socket.on("devices_update", deviceArray => {
+      devicesList.innerHTML = "";
+      deviceArray.forEach(dev => {
+        const li = document.createElement("li");
+        li.textContent = dev;
+        devicesList.appendChild(li);
+      });
+
+      if (deviceArray.includes(deviceIdTouch)) {
+        touchStatus.textContent = "🟢 Active";
+      } else {
+        touchStatus.textContent = "🔴 Inactive";
+      }
+
+      if (deviceArray.includes(deviceIdKeyboard)) {
+        keyboardStatus.textContent = "🟢 Active";
+      } else {
+        keyboardStatus.textContent = "🔴 Inactive";
+      }
+    });
   </script>
 </body>
 </html>
