@@ -96,23 +96,26 @@
     socket.on("devices_update", deviceArray => {
       devicesList.innerHTML = "";
       deviceArray.forEach(dev => {
-        const li = document.createElement("li");
-        li.textContent = dev;
-        devicesList.appendChild(li);
+        if (dev === deviceIdTouch || dev === deviceIdKeyboard) {
+          const li = document.createElement("li");
+          li.textContent = dev;
+          devicesList.appendChild(li);
+        }
       });
-
+    
       if (deviceArray.includes(deviceIdTouch)) {
         touchStatus.textContent = "🟢 Active";
       } else {
         touchStatus.textContent = "🔴 Inactive";
       }
-
+    
       if (deviceArray.includes(deviceIdKeyboard)) {
         keyboardStatus.textContent = "🟢 Active";
       } else {
         keyboardStatus.textContent = "🔴 Inactive";
       }
     });
+
   </script>
 </body>
 </html>
