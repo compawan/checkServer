@@ -9,46 +9,45 @@
       background-color: black;
       color: white;
       font-family: sans-serif;
+      display: flex;
+    }
+    #main {
+      flex: 1;
+      text-align: center;
+    }
+    #sidebar {
+      width: 250px;
+      background-color: #111;
+      padding: 10px;
     }
     h1 {
       margin: 10px 0;
-      text-align: center;
     }
     img {
       display: block;
       margin: 0 auto;
-      max-width: 90%;
-      max-height: 80%;
+      width: auto;
+      height: auto;
+      max-width: 100%;
+      max-height: 90vh;
     }
-    #status-panel {
-      position: fixed;
-      top: 10px;
-      right: 10px;
-      background-color: rgba(255,255,255,0.1);
-      color: white;
-      padding: 10px;
-      border-radius: 8px;
-      text-align: left;
-      font-size: 14px;
-      max-height: 90%;
-      overflow-y: auto;
+    ul {
+      padding-left: 15px;
     }
   </style>
 </head>
 <body>
-  <h1>Competent Technologies (MilkJet)</h1>
-
-  <div id="status-panel">
-    <div><strong>Device:</strong> <span id="deviceStatus">🔴 Disconnected</span></div>
-    <div><strong>Touch:</strong> <span id="touchStatus">🔴 Inactive</span></div>
-    <div><strong>Keyboard:</strong> <span id="keyboardStatus">🔴 Inactive</span></div>
-    <hr>
-    <div><strong>Registered devices:</strong></div>
+  <div id="main">
+    <h1>Competent Technologies (MilkJet)</h1>
+    <img id="screen" src="" />
+  </div>
+  <div id="sidebar">
+    <h2>Status</h2>
+    <div>Touch: <span id="touchStatus">🔴 Inactive</span></div>
+    <div>Keyboard: <span id="keyboardStatus">🔴 Inactive</span></div>
+    <h3>Connected Devices</h3>
     <ul id="devicesList"></ul>
   </div>
-
-  <img id="screen" src="" />
-
   <script>
     const socket = io("https://checkserver-rmqt.onrender.com");
 
@@ -63,33 +62,9 @@
     const deviceIdTouch = `${id}_touch`;
     const deviceIdKeyboard = `${id}_keyboard`;
 
-    const deviceStatus = document.getElementById("deviceStatus");
     const touchStatus = document.getElementById("touchStatus");
     const keyboardStatus = document.getElementById("keyboardStatus");
     const devicesList = document.getElementById("devicesList");
-
-    socket.on("connect", () => {
-      console.log("✅ Connected to server");
-      deviceStatus.textContent = "🟢 Connected";
-    });
-
-    socket.on("disconnect", () => {
-      console.log("❌ Disconnected from server");
-      deviceStatus.textContent = "🔴 Disconnected";
-      touchStatus.textContent = "🔴 Inactive";
-      keyboardStatus.textContent = "🔴 Inactive";
-      devicesList.innerHTML = "";
-    });
-
-    // devices list update from server
-    socket.on("devices_update", deviceArray => {
-      devicesList.innerHTML = "";
-      deviceArray.forEach(dev => {
-        const li = document.createElement("li");
-        li.textContent = dev;
-        devicesList.appendChild(li);
-      });
-    });
 
     const xOffset = -20;
     const yOffset = 28;
@@ -106,8 +81,6 @@
         x: correctedX,
         y: correctedY
       });
-
-      touchStatus.textContent = "🟢 Active";
     });
 
     document.addEventListener("keydown", e => {
@@ -118,8 +91,27 @@
         code: e.code,
         keyCode: e.keyCode
       });
+    });
 
-      keyboardStatus.textContent = "🟢 Active";
+    socket.on("devices_update", deviceArray => {
+      devicesList.innerHTML = "";
+      deviceArray.forEach(dev => {
+        const li = document.createElement("li");
+        li.textContent = dev;
+        devicesList.appendChild(li);
+      });
+
+      if (deviceArray.includes(deviceIdTouch)) {
+        touchStatus.textContent = "🟢 Active";
+      } else {
+        touchStatus.textContent = "🔴 Inactive";
+      }
+
+      if (deviceArray.includes(deviceIdKeyboard)) {
+        keyboardStatus.textContent = "🟢 Active";
+      } else {
+        keyboardStatus.textContent = "🔴 Inactive";
+      }
     });
   </script>
 </body>
