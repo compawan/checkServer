@@ -8,20 +8,20 @@
       margin: 0;
       background-color: black;
       color: white;
-      text-align: center;
       font-family: sans-serif;
     }
     h1 {
       margin: 10px 0;
+      text-align: center;
     }
     img {
       display: block;
       margin: 0 auto;
-      width: auto;
-      height: auto;
+      max-width: 90%;
+      max-height: 80%;
     }
     #status-panel {
-      position: absolute;
+      position: fixed;
       top: 10px;
       right: 10px;
       background-color: rgba(255,255,255,0.1);
@@ -30,17 +30,21 @@
       border-radius: 8px;
       text-align: left;
       font-size: 14px;
+      max-height: 90%;
+      overflow-y: auto;
     }
   </style>
 </head>
 <body>
   <h1>Competent Technologies (MilkJet)</h1>
 
-  <!-- status panel -->
   <div id="status-panel">
-    <div>Device: <span id="deviceStatus">🔴 Disconnected</span></div>
-    <div>Touch: <span id="touchStatus">🔴 Inactive</span></div>
-    <div>Keyboard: <span id="keyboardStatus">🔴 Inactive</span></div>
+    <div><strong>Device:</strong> <span id="deviceStatus">🔴 Disconnected</span></div>
+    <div><strong>Touch:</strong> <span id="touchStatus">🔴 Inactive</span></div>
+    <div><strong>Keyboard:</strong> <span id="keyboardStatus">🔴 Inactive</span></div>
+    <hr>
+    <div><strong>Registered devices:</strong></div>
+    <ul id="devicesList"></ul>
   </div>
 
   <img id="screen" src="" />
@@ -48,7 +52,6 @@
   <script>
     const socket = io("https://checkserver-rmqt.onrender.com");
 
-    // register
     socket.emit("register_device", { id: "browser" });
 
     const urlParams = new URLSearchParams(window.location.search);
@@ -63,8 +66,8 @@
     const deviceStatus = document.getElementById("deviceStatus");
     const touchStatus = document.getElementById("touchStatus");
     const keyboardStatus = document.getElementById("keyboardStatus");
+    const devicesList = document.getElementById("devicesList");
 
-    // update device connection status
     socket.on("connect", () => {
       console.log("✅ Connected to server");
       deviceStatus.textContent = "🟢 Connected";
@@ -75,6 +78,17 @@
       deviceStatus.textContent = "🔴 Disconnected";
       touchStatus.textContent = "🔴 Inactive";
       keyboardStatus.textContent = "🔴 Inactive";
+      devicesList.innerHTML = "";
+    });
+
+    // devices list update from server
+    socket.on("devices_update", deviceArray => {
+      devicesList.innerHTML = "";
+      deviceArray.forEach(dev => {
+        const li = document.createElement("li");
+        li.textContent = dev;
+        devicesList.appendChild(li);
+      });
     });
 
     const xOffset = -20;
@@ -93,7 +107,6 @@
         y: correctedY
       });
 
-      // mark touch active
       touchStatus.textContent = "🟢 Active";
     });
 
@@ -106,7 +119,6 @@
         keyCode: e.keyCode
       });
 
-      // mark keyboard active
       keyboardStatus.textContent = "🟢 Active";
     });
   </script>
